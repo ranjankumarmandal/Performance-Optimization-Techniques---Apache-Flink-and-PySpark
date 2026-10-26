@@ -1,0 +1,32 @@
+================================================================================
+PYSPARK PERFORMANCE OPTIMIZATION CHECKLIST
+================================================================================
+
+TABLE OF CONTENTS
+-----------------
+1. Core Spark Architecture Fundamentals
+2. Data Partitioning Strategies
+3. Memory Management and Tuning
+4. Shuffle Optimization
+5. Catalyst Optimizer and Query Planning
+6. DataFrame/Dataset API Best Practices
+7. UDF Optimization
+8. Caching and Persistence Strategies
+9. Broadcast Variables and Accumulators
+10. Job Scheduling and Resource Allocation
+11. Monitoring and Debugging
+12. Common Anti-Patterns to Avoid
+13. Advanced Optimization Techniques
+14. Cluster Configuration
+15. Data Serialization
+16. File Format Optimization
+17. SQL and DataFrame Operations
+18. Handling Skewed Data
+19. Join Optimization
+20. Window Functions Optimization
+21. Structured Streaming Performance
+22. MLlib Performance
+23. GraphX Performance
+24. Testing and Benchmarking
+25. Production Considerations
+
