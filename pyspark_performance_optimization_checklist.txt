@@ -30,3 +30,40 @@ TABLE OF CONTENTS
 24. Testing and Benchmarking
 25. Production Considerations
 
+
+================================================================================
+1. CORE SPARK ARCHITECTURE FUNDamentals
+================================================================================
+
+[ ] Understand Spark Application Architecture
+    - Driver program coordinates execution
+    - Executor processes run tasks
+    - Cluster manager (YARN, Mesos, Kubernetes, Standalone)
+    - Task = unit of work on a partition
+    - Stage = set of tasks that can be executed in parallel
+    - Job = set of stages triggered by an action
+
+[ ] Understand RDD vs DataFrame vs Dataset
+    - RDD: Low-level, untyped, less optimized
+    - DataFrame: Typed with schema, Catalyst optimizer
+    - Dataset: Type-safe DataFrame (Scala/Java only)
+    - Prefer DataFrames over RDDs for performance
+
+[ ] Understand Lazy Evaluation
+    - Transformations are lazy (map, filter, groupBy)
+    - Actions trigger execution (collect, count, write)
+    - DAG (Directed Acyclic Graph) built from transformations
+    - Catalyst optimizer optimizes DAG before execution
+
+[ ] Understand Lineage and Fault Tolerance
+    - Lineage tracks transformation history
+    - RDDs can be recomputed on failure
+    - Checkpointing breaks lineage for long chains
+    - Trade-off between recomputation and storage
+
+[ ] Understand Execution Model
+    - Narrow dependencies: data on same partition (map, filter)
+    - Wide dependencies: require shuffle (groupByKey, reduceByKey)
+    - Pipelining: narrow dependencies can be pipelined
+    - Stage boundaries at wide dependencies
+
