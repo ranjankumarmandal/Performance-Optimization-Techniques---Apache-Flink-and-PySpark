@@ -67,3 +67,54 @@ TABLE OF CONTENTS
     - Pipelining: narrow dependencies can be pipelined
     - Stage boundaries at wide dependencies
 
+
+================================================================================
+2. DATA PARTITIONING STRATEGIES
+================================================================================
+
+[ ] Understand Partitioning Basics
+    - Partition = chunk of data processed by one task
+    - Too few partitions: underutilized cluster, OOM
+    - Too many partitions: overhead, small files problem
+    - Target: 128MB-256MB per partition (HDFS block size)
+
+[ ] Default Partitioning
+    - Default partitions: spark.default.parallelism (RDDs)
+    - Default partitions: spark.sql.shuffle.partitions (DataFrames, default 200)
+    - Adjust based on data size and cluster resources
+
+[ ] Repartition vs Coalesce
+    - repartition(num): full shuffle, increases or decreases partitions
+    - coalesce(num): no shuffle, only decreases partitions
+    - Use coalesce when reducing partitions after filtering
+    - Use repartition when need even distribution
+
+[ ] Partitioning Strategies
+    - Hash partitioning: default for most operations
+    - Range partitioning: for ordered data
+    - Custom partitioners: for specific distribution needs
+    - Partition by column for joins/aggregations
+
+[ ] Bucketing
+    - Pre-shuffle data for frequent joins
+    - df.write.bucketBy(numBuckets, "col").saveAsTable()
+    - Reduces shuffle for subsequent joins
+    - Works best for equality joins on bucketed columns
+
+[ ] Partition Pruning
+    - Partition data by frequently filtered columns
+    - df.write.partitionBy("year", "month").parquet()
+    - Spark reads only relevant partitions
+    - Avoid too many small partitions (1000s of folders)
+
+[ ] Salting for Skewed Data
+    - Add random salt to keys for skewed joins
+    - Explode skewed key into multiple keys
+    - Join on salted key, then aggregate results
+    - Reduces stragglers from data skew
+
+[ ] Dynamic Partition Pruning
+    - Spark 3.0+ feature
+    - Prune partitions based on join conditions
+    - Enabled by spark.sql.optimizer.dynamicPartitionPruning
+    - Especially useful for star schema queries
