@@ -118,3 +118,58 @@ TABLE OF CONTENTS
     - Prune partitions based on join conditions
     - Enabled by spark.sql.optimizer.dynamicPartitionPruning
     - Especially useful for star schema queries
+
+
+================================================================================
+3. MEMORY MANAGEMENT AND TUNING
+================================================================================
+
+[ ] Understand Spark Memory Model
+    - On-heap memory: managed by JVM
+    - Off-heap memory: managed by Spark (Tungsten)
+    - Execution memory: shuffles, joins, sorts
+    - Storage memory: caching/broadcasting
+    - User memory: user data structures, UDFs
+
+[ ] Memory Configuration
+    - spark.executor.memory: total memory per executor
+    - spark.memory.fraction: fraction for execution+storage (default 0.6)
+    - spark.memory.storageFraction: fraction of execution+storage for storage (default 0.5)
+    - spark.executor.memoryOverhead: off-heap memory for system overhead
+
+[ ] Memory Tuning Guidelines
+    - Leave 20-30% for OS and overhead
+    - spark.memory.fraction: increase if OOM on shuffles
+    - spark.memory.storageFraction: decrease if caching causes OOM
+    - Monitor GC logs to tune
+
+[ ] Garbage Collection Tuning
+    - Use G1GC for large heaps (>4GB)
+    - -XX:+UseG1GC -XX:MaxGCPauseMillis=200
+    - Monitor GC time in Spark UI
+    - Target: <10% of task time in GC
+
+[ ] Off-Heap Memory
+    - spark.memory.offHeap.enabled: enable off-heap
+    - spark.memory.offHeap.size: off-heap memory size
+    - Reduces JVM GC pressure
+    - Used by Tungsten for binary format
+
+[ ] Tungsten Memory Management
+    - Binary in-memory format
+    - Cache-aware computation
+    - No Java object overhead
+    - Enabled by default in Spark 2.0+
+
+[ ] Spill to Disk
+    - When memory insufficient, data spills to disk
+    - spark.shuffle.spill: enable/disable spilling
+    - spark.shuffle.spill.numElementsForceSpillThreshold
+    - Monitor spill metrics in Spark UI
+
+[ ] Memory Profiling
+    - Use Spark UI Storage and Executors tabs
+    - Check "Disk Spilled" and "Memory Spilled" metrics
+    - Use -XX:+PrintGCDetails for GC analysis
+    - Profile with Java Flight Recorder
+
