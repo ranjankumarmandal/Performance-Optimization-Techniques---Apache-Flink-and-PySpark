@@ -173,3 +173,62 @@ TABLE OF CONTENTS
     - Use -XX:+PrintGCDetails for GC analysis
     - Profile with Java Flight Recorder
 
+
+================================================================================
+4. SHUFFLE OPTIMIZATION
+================================================================================
+
+[ ] Understand Shuffle Operations
+    - Wide dependencies trigger shuffle
+    - Expensive: disk I/O, network I/O, serialization
+    - Common shuffle ops: groupByKey, reduceByKey, join, distinct, reorder
+    - Minimize shuffles in job logic
+
+[ ] Reduce Shuffle Operations
+    - Use reduceByKey over groupByKey (map-side combine)
+    - Use aggregateByKey for complex aggregations
+    - Filter before shuffle to reduce data volume
+    - Combine multiple shuffles into one
+
+[ ] Shuffle File Handling
+    - spark.shuffle.file.buffer: buffer size for shuffle writes (default 32KB)
+    - spark.shuffle.io.maxRetries: max retries for fetch failures
+    - spark.shuffle.io.retryWait: wait between retries
+    - spark.shuffle.service.enabled: enable external shuffle service
+
+[ ] Shuffle Consolidation
+    - spark.shuffle.consolidateFiles: consolidate shuffle files
+    - Reduces number of open files
+    - Important for large number of partitions
+    - Enabled by default in Spark 1.6+
+
+[ ] Shuffle Sort vs Hash
+    - spark.shuffle.sort.bypassMergeThreshold: use hash shuffle for small reduces
+    - Sort shuffle: default, better for large data
+    - Tungsten-sort: optimized for primitive types
+    - Auto-selected by Spark
+
+[ ] Broadcast Hash Join
+    - For small table joining large table
+    - spark.sql.autoBroadcastJoinThreshold: max size for broadcast (default 10MB)
+    - Set to -1 to disable, or higher to enable
+    - Eliminates shuffle for small dimension tables
+
+[ ] Shuffle Partition Count
+    - spark.sql.shuffle.partitions: default 200
+    - Too high: task overhead, small files
+    - Too low: OOM, long tasks
+    - Formula: total_data_size / target_partition_size (128MB)
+
+[ ] Shuffle Read/Write Optimization
+    - spark.sql.shuffle.partitions: adjust based on data
+    - spark.shuffle.compress: compress shuffle data (default true)
+    - spark.shuffle.spill.compress: compress spill data (default true)
+    - Use LZ4 or ZSTD for faster compression
+
+[ ] External Shuffle Service
+    - spark.shuffle.service.enabled: enable external shuffle service
+    - Allows executors to be removed without losing shuffle files
+    - Required for dynamic allocation
+    - Improves cluster utilization
+
