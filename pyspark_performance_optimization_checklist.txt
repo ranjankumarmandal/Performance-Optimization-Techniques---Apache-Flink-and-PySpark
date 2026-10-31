@@ -232,3 +232,67 @@ TABLE OF CONTENTS
     - Required for dynamic allocation
     - Improves cluster utilization
 
+
+================================================================================
+5. CATALYST OPTIMIZER AND QUERY PLANNING
+================================================================================
+
+[ ] Understand Catalyst Optimizer
+    - Rule-based optimization
+    - Cost-based optimization (CBO)
+    - Logical plan → Optimized logical plan → Physical plan
+    - Uses statistics for cost estimation
+
+[ ] Query Plan Analysis
+    - df.explain(): view physical plan
+    - df.explain(extended=True): view logical and physical plans
+    - Look for: number of stages, join strategies, operations pushed down
+    - Identify bottlenecks in plan
+
+[ ] Predicate Pushdown
+    - Filters pushed to data source
+    - Reduces data read from storage
+    - Works with Parquet, ORC, JDBC
+    - Check plan for "PushedFilters"
+
+[ ] Column Pruning
+    - Only read required columns
+    - Reduces I/O and memory
+    - Automatic for DataFrames
+    - Select only needed columns
+
+[ ] Constant Folding
+    - Compute constant expressions at compile time
+    - Reduces runtime computation
+    - Example: WHERE col > 10 + 5 → WHERE col > 15
+
+[ ] Operator Reordering
+    - Catalyst reorders operations for efficiency
+    - Filters pushed before joins
+    - Projections pushed after joins
+    - Check plan for optimal order
+
+[ ] Join Reordering
+    - Star schema detection
+    - Reorders joins based on size
+    - Broadcast joins for small tables
+    - Sort-merge joins for large tables
+
+[ ] Cost-Based Optimization (CBO)
+    - spark.sql.cbo.enabled: enable CBO
+    - spark.sql.statistics.histogram.enabled: enable histograms
+    - ANALYZE TABLE COMPUTE STATISTICS: collect table stats
+    - ANALYZE TABLE COMPUTE STATISTICS FOR COLUMNS: collect column stats
+
+[ ] Adaptive Query Execution (AQE)
+    - Spark 3.0+ feature
+    - Optimizes at runtime based on statistics
+    - Features: dynamic coalescing, skew join handling
+    - spark.sql.adaptive.enabled: enable AQE
+
+[ ] Subquery Optimization
+    - Scalar subqueries
+    - EXISTS/IN subqueries
+    - Correlated subqueries
+    - Rewritten to joins when possible
+
