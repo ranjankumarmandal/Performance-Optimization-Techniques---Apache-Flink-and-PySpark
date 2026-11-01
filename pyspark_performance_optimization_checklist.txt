@@ -296,3 +296,73 @@ TABLE OF CONTENTS
     - Correlated subqueries
     - Rewritten to joins when possible
 
+
+================================================================================
+6. DATAFRAME/DATASET API BEST PRACTICES
+================================================================================
+
+[ ] Use DataFrame API over RDD
+    - Catalyst optimizer optimizations
+    - Tungsten execution engine
+    - Better memory management
+    - 10-100x faster than RDDs
+
+[ ] Use Built-in Functions
+    - pyspark.sql.functions over UDFs
+    - Vectorized operations
+    - Catalyst optimizations
+    - Example: F.col, F.sum, F.when
+
+[ ] Avoid collect() on Large Data
+    - collect() brings all data to driver
+    - Can cause OOM on driver
+    - Use take(), head(), show() for sampling
+    - Use write() for saving results
+
+[ ] Use SQL for Complex Queries
+    - df.createOrReplaceTempView("table")
+    - spark.sql("SELECT ...")
+    - Often more readable for complex logic
+    - Same optimizations as DataFrame API
+
+[ ] Chain Operations
+    - Chain transformations: df.filter().groupBy().agg()
+    - Avoid intermediate variables
+    - Allows Catalyst to optimize entire pipeline
+    - More readable
+
+[ ] Select Columns Explicitly
+    - df.select("col1", "col2") over df["col1"]
+    - Avoid df.select("*") when not needed
+    - Reduces data movement
+    - Enables column pruning
+
+[ ] Use withColumn for Multiple Transformations
+    - df.withColumn("new_col", expr)
+    - Chain multiple withColumn calls
+    - More efficient than creating new DataFrames
+
+[ ] Avoid UDFs When Possible
+    - Use built-in functions first
+    - Use pandas_udf (vectorized UDF) if needed
+    - Regular UDFs are slow (serialization)
+    - Consider SQL expressions
+
+[ ] Use Typed Operations
+    - Use filter() with Column expressions
+    - Avoid Python lambda functions
+    - Example: df.filter(F.col("age") > 25)
+    - Better than df.filter(lambda x: x.age > 25)
+
+[ ] Handle Null Values Properly
+    - Use F.isnull(), F.isnotnull()
+    - Use F.coalesce() for default values
+    - Use F.na.fill() for filling
+    - Use F.na.drop() for removing
+
+[ ] Use Window Functions Efficiently
+    - from pyspark.sql.window import Window
+    - Window.spec.orderBy().partitionBy()
+    - Avoid multiple window operations
+    - Cache before complex window operations
+
