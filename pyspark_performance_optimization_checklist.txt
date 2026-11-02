@@ -366,3 +366,61 @@ TABLE OF CONTENTS
     - Avoid multiple window operations
     - Cache before complex window operations
 
+
+================================================================================
+7. UDF OPTIMIZATION
+================================================================================
+
+[ ] Understand UDF Performance Impact
+    - Regular UDFs: row-by-row processing
+    - Serialization/deserialization overhead
+    - No Catalyst optimization
+    - 10-100x slower than built-in functions
+
+[ ] Use Pandas UDFs (Vectorized UDFs)
+    - pandas_udf: process batches as pandas Series
+    - Arrow serialization: faster than pickle
+    - spark.sql.execution.arrow.pyspark.enabled: enable Arrow
+    - 10-100x faster than regular UDFs
+
+[ ] Pandas UDF Types
+    - Scalar pandas_udf: input/output scalar
+    - Grouped Map pandas_udf: groupBy().apply()
+    - Grouped Aggregate pandas_udf: custom aggregations
+    - Window pandas_udf: window operations
+
+[ ] Pandas UDF Best Practices
+    - Use vectorized pandas operations
+    - Avoid row-by-row iteration
+    - Use pandas/numpy built-in functions
+    - Minimize data transfer between Python and JVM
+
+[ ] Regular UDF Optimization
+    - Cache results if reused
+    - Keep UDF logic simple
+    - Avoid heavy computation in UDF
+    - Use deterministic UDFs for caching
+
+[ ] UDF Serialization
+    - spark.sql.execution.arrow.pyspark.enabled: enable Arrow
+    - spark.sql.execution.arrow.maxRecordsPerBatch: batch size
+    - Larger batches = better performance, more memory
+    - Tune based on data size
+
+[ ] UDF Registration
+    - spark.udf.register(): register for SQL
+    - Use @udf decorator for DataFrame API
+    - Specify return type explicitly
+    - Example: @udf("double")
+
+[ ] Avoid Python UDFs in Joins
+    - UDFs in join conditions disable optimizations
+    - Move UDFs before/after joins
+    - Use built-in functions in join conditions
+    - Consider materializing UDF results
+
+[ ] Monitor UDF Performance
+    - Check task duration in Spark UI
+    - Compare with built-in function performance
+    - Profile with Python profilers
+    - Consider rewriting in Scala for critical paths
