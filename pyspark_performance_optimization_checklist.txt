@@ -424,3 +424,71 @@ TABLE OF CONTENTS
     - Compare with built-in function performance
     - Profile with Python profilers
     - Consider rewriting in Scala for critical paths
+
+
+================================================================================
+8. CACHING AND PERSISTENCE STRATEGIES
+================================================================================
+
+[ ] Understand Caching Levels
+    - MEMORY_ONLY: store in memory, deserialized
+    - MEMORY_ONLY_SER: store in memory, serialized
+    - MEMORY_AND_DISK: memory + disk overflow
+    - MEMORY_AND_DISK_SER: serialized memory + disk
+    - DISK_ONLY: disk only
+    - OFF_HEAP: off-heap memory
+
+[ ] When to Cache
+    - Data reused multiple times
+    - Expensive computations
+    - Iterative algorithms (MLlib)
+    - Small-to-medium datasets
+
+[ ] When NOT to Cache
+    - Large datasets that don't fit in memory
+    - Data used only once
+    - Simple transformations
+    - When shuffle is cheap
+
+[ ] Cache Best Practices
+    - Cache after expensive transformations
+    - Unpersist when no longer needed: df.unpersist()
+    - Use appropriate storage level
+    - Monitor cache usage in Spark UI
+
+[ ] Storage Level Selection
+    - MEMORY_ONLY: default, fast, may lose data if OOM
+    - MEMORY_AND_DISK: safer, slower on spill
+    - MEMORY_ONLY_SER: more memory efficient, CPU overhead
+    - DISK_ONLY: for very large data, slow
+
+[ ] Cache vs Persist
+    - cache() = persist(StorageLevel.MEMORY_ONLY)
+    - persist() allows custom storage level
+    - Use persist() for more control
+    - Use cache() for simple cases
+
+[ ] Broadcast Variables
+    - Broadcast read-only data to all executors
+    - sc.broadcast(variable)
+    - Eliminates shipping data with each task
+    - Use for lookup tables, config
+
+[ ] Accumulators
+    - Accumulate values across tasks
+    - sc.accumulator(initial_value)
+    - For counters, sums
+    - Only driver can read value
+
+[ ] Cache Monitoring
+    - Spark UI Storage tab
+    - Check fraction cached
+    - Monitor memory usage
+    - Remove unused caches
+
+[ ] Cache Invalidation
+    - Cache is lazy: computed on first action
+    - Recomputed if lineage changes
+    - Use checkpoint() to break lineage
+    - Unpersist to free memory
+
