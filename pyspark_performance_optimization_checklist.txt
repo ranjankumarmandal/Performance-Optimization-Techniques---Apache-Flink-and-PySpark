@@ -492,3 +492,56 @@ TABLE OF CONTENTS
     - Use checkpoint() to break lineage
     - Unpersist to free memory
 
+
+================================================================================
+9. BROADCAST VARIABLES AND ACCUMULATORS
+================================================================================
+
+[ ] Broadcast Variables
+    - sc.broadcast(large_data)
+    - Sent to each executor once
+    - Efficient for shared read-only data
+    - Reduces network overhead
+
+[ ] When to Use Broadcast
+    - Lookup tables
+    - Configuration data
+    - Small reference data
+    - Machine learning models
+
+[ ] Broadcast Best Practices
+    - Broadcast data < 100MB typically
+    - Use unpersist() when done
+    - Avoid broadcasting mutable data
+    - Monitor broadcast size in Spark UI
+
+[ ] Broadcast Join
+    - Automatic for small tables
+    - spark.sql.autoBroadcastJoinThreshold
+    - Manually broadcast: broadcast(df)
+    - Eliminates shuffle for small table
+
+[ ] Accumulators
+    - sc.accumulator(0) for counters
+    - sc.accumulator(0.0) for sums
+    - Only driver can read value
+    - Tasks can only add to value
+
+[ ] Accumulator Types
+    - LongAccumulator: integer values
+    - DoubleAccumulator: floating point
+    - CollectionAccumulator: collect values
+    - Custom accumulators
+
+[ ] Accumulator Best Practices
+    - Use for metrics, debugging
+    - Not for critical business logic
+    - May be counted multiple times on retries
+    - Reset value between actions
+
+[ ] Broadcast vs Accumulator
+    - Broadcast: send data to executors
+    - Accumulator: collect data from executors
+    - Broadcast for read-only sharing
+    - Accumulator for aggregation
+
