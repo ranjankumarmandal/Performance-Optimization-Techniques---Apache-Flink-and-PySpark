@@ -545,3 +545,68 @@ TABLE OF CONTENTS
     - Broadcast for read-only sharing
     - Accumulator for aggregation
 
+
+================================================================================
+10. JOB SCHEDULING AND RESOURCE ALLOCATION
+================================================================================
+
+[ ] Cluster Resource Allocation
+    - --num-executors: number of executors
+    - --executor-cores: cores per executor
+    - --executor-memory: memory per executor
+    - --driver-memory: driver memory
+
+[ ] Executor Sizing Guidelines
+    - Cores per executor: 5-6 (leave 1 for OS/Hadoop)
+    - Memory per executor: 30-60GB (avoid >64GB)
+    - More executors with smaller memory is often better
+    - Consider YARN container overhead
+
+[ ] Dynamic Allocation
+    - spark.dynamicAllocation.enabled: enable dynamic allocation
+    - spark.dynamicAllocation.minExecutors: minimum executors
+    - spark.dynamicAllocation.maxExecutors: maximum executors
+    - spark.dynamicAllocation.initialExecutors: starting executors
+
+[ ] Dynamic Allocation Benefits
+    - Scale up during peak load
+    - Scale down during idle periods
+    - Better cluster utilization
+    - Cost savings in cloud
+
+[ ] Dynamic Allocation Requirements
+    - External shuffle service required
+    - spark.shuffle.service.enabled: true
+    - Proper timeout configuration
+    - Monitoring for executor churn
+
+[ ] Fair Scheduler
+    - spark.scheduler.mode: FAIR
+    - Multiple pools with different weights
+    - Prevents long jobs from starving short jobs
+    - Configure pools in spark-defaults.conf
+
+[ ] Speculative Execution
+    - spark.speculation: enable speculative execution
+    - spark.speculation.multiplier: slow task threshold
+    - spark.speculation.interval: check interval
+    - Retries slow tasks on other executors
+
+[ ] Speculative Execution Considerations
+    - Can cause duplicate work
+    - Not safe for non-idempotent operations
+    - Useful for stragglers
+    - Monitor for wasted resources
+
+[ ] Task Scheduling
+    - spark.task.maxFailures: max task failures
+    - spark.task.resource.gpu.amount: GPU allocation
+    - spark.task.resource.gpu.discoveryScript: GPU discovery
+    - Locality: NODE_LOCAL, RACK_LOCAL, ANY
+
+[ ] Backpressure
+    - spark.streaming.backpressure.enabled: enable backpressure
+    - spark.streaming.backpressure.initialRate: initial rate
+    - Adjusts ingestion rate based on processing time
+    - Prevents overload
+
