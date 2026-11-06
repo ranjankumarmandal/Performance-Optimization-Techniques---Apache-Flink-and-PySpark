@@ -610,3 +610,71 @@ TABLE OF CONTENTS
     - Adjusts ingestion rate based on processing time
     - Prevents overload
 
+
+================================================================================
+11. MONITORING AND DEBUGGING
+================================================================================
+
+[ ] Spark Web UI
+    - Jobs tab: job progress and stages
+    - Stages tab: task details, shuffle read/write
+    - Storage tab: cached data
+    - Executors tab: executor metrics
+    - Environment tab: configuration
+
+[ ] Key Metrics to Monitor
+    - Job duration
+    - Stage duration
+    - Task duration (min, max, median)
+    - Shuffle read/write bytes
+    - Disk spilled
+    - GC time
+
+[ ] Straggler Detection
+    - Look for tasks much slower than others
+    - Check data skew
+    - Check resource contention
+    - Consider speculative execution
+
+[ ] Spark History Server
+    - spark.eventLog.enabled: enable event logging
+    - spark.eventLog.dir: event log directory
+    - Review completed application history
+    - Debug performance issues post-mortem
+
+[ ] Logging Configuration
+    - spark.eventLog.enabled: true
+    - spark.eventLog.compress: true
+    - spark.history.fs.logDirectory: history directory
+    - Configure log retention
+
+[ ] Metrics System
+    - Spark metrics: sinks (Console, CSV, JMX, Prometheus)
+    - spark.metrics.conf: metrics configuration
+    - Monitor executor metrics
+    - Integrate with monitoring systems
+
+[ ] Profiling Tools
+    - Spark UI: task breakdown
+    - Spark Listeners: custom event handling
+    - Java Flight Recorder: JVM profiling
+    - Python profilers for UDFs
+
+[ ] Debugging Common Issues
+    - OOM: increase memory, reduce partitions
+    - Slow tasks: check skew, increase partitions
+    - Long GC: tune heap, use off-heap
+    - Shuffle errors: check network, disk space
+
+[ ] Query Execution Plan
+    - df.explain(): view execution plan
+    - df.explain(extended=True): detailed plan
+    - df.explain(mode="cost"): cost-based plan
+    - Identify inefficient operations
+
+[ ] Structured Streaming Metrics
+    - spark.sql.streaming.metricsEnabled: enable metrics
+    - Monitor processing time, latency
+    - Check input rate, processing rate
+    - Debug backpressure issues
+
