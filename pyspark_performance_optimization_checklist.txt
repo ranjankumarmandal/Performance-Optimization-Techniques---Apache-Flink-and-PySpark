@@ -678,3 +678,73 @@ TABLE OF CONTENTS
     - Check input rate, processing rate
     - Debug backpressure issues
 
+
+================================================================================
+12. COMMON ANTI-PATTERNS TO AVOID
+================================================================================
+
+[ ] Anti-Pattern: Using RDDs When DataFrames Suffice
+    - Problem: Miss out on Catalyst optimizations
+    - Solution: Use DataFrame/Dataset API
+    - Exception: Custom data types, low-level control
+
+[ ] Anti-Pattern: collect() on Large Datasets
+    - Problem: OOM on driver
+    - Solution: Use take(), head(), or write to storage
+    - Use count() for counts, not collect().count()
+
+[ ] Anti-Pattern: Too Many Small Files
+    - Problem: NameNode pressure, slow reads
+    - Solution: coalesce() before write, proper partitioning
+    - Target: 128MB+ per file
+
+[ ] Anti-Pattern: groupByKey Instead of reduceByKey
+    - Problem: Excessive shuffle, OOM
+    - Solution: Use reduceByKey or aggregateByKey
+    - Allows map-side combine
+
+[ ] Anti-Pattern: Using UDFs Unnecessarily
+    - Problem: Slow, no optimization
+    - Solution: Use built-in functions or pandas_udf
+    - Rewrite logic with SQL expressions
+
+[ ] Anti-Pattern: Not Filtering Early
+    - Problem: Processing unnecessary data
+    - Solution: Filter as early as possible
+    - Push filters to data source
+
+[ ] Anti-Pattern: Repeatedly Reading Same Data
+    - Problem: Unnecessary I/O
+    - Solution: Cache frequently used data
+    - Use persist() with appropriate level
+
+[ ] Anti-Pattern: Creating Too Many Partitions
+    - Problem: Task overhead, small files
+    - Solution: Tune spark.sql.shuffle.partitions
+    - Use coalesce() to reduce partitions
+
+[ ] Anti-Pattern: Not Handling Skewed Data
+    - Problem: Stragglers, long job times
+    - Solution: Salting, broadcast joins, AQE
+    - Monitor for skewed partitions
+
+[ ] Anti-Pattern: Using SELECT *
+    - Problem: Read unnecessary columns
+    - Solution: Select only needed columns
+    - Enables column pruning
+
+[ ] Anti-Pattern: Ignoring Data Locality
+    - Problem: Network overhead
+    - Solution: Co-locate data with compute
+    - Use appropriate storage formats
+
+[ ] Anti-Pattern: Not Monitoring Performance
+    - Problem: Miss optimization opportunities
+    - Solution: Regular Spark UI review
+    - Set up monitoring and alerting
+
+[ ] Anti-Pattern: Hard-Coding Configuration
+    - Problem: Not portable, hard to tune
+    - Solution: Use config files, environment variables
+    - Make configuration flexible
+
