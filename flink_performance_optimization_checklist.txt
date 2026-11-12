@@ -1,0 +1,307 @@
+================================================================================
+APACHE FLINK PERFORMANCE OPTIMIZATION CHECKLIST
+================================================================================
+
+TABLE OF CONTENTS
+-----------------
+1. Core Flink Architecture Fundamentals
+2. DataStream API vs Table API/SQL
+3. State Management and Backends
+4. Checkpointing and Fault Tolerance
+5. Window Operations
+6. Time Semantics (Event Time, Processing Time, Ingestion Time)
+7. Watermarks and Late Data Handling
+8. Keyed vs Non-Keyed Streams
+9. Parallelism and Slot Allocation
+10. Operator Chaining
+11. Memory Management
+12. Network Buffers and Shuffle
+13. Serialization and Type Information
+14. Source and Sink Connectors
+15. CEP (Complex Event Processing) Optimization
+16. Batch Processing Optimization
+17. SQL/Table API Optimization
+18. Join Optimization
+19. Async I/O
+20. Managed Memory and Task Heap
+21. RocksDB State Backend Tuning
+22. Savepoints and Upgrades
+23. Monitoring and Metrics
+24. Common Anti-Patterns
+25. Production Considerations
+
+
+================================================================================
+1. CORE FLINK ARCHITECTURE FUNDamentals
+================================================================================
+
+[ ] Flink Runtime Architecture
+    - JobManager: coordinates execution, scheduling, checkpointing
+    - TaskManager: executes tasks, manages state, buffers
+    - Client: submits jobs to JobManager
+    - Task Slots: isolated resource units in TaskManager
+
+[ ] Execution Graph
+    - JobGraph: high-level job representation
+    - ExecutionGraph: parallelized execution plan
+    - ExecutionVertex: parallel subtask
+    - IntermediateResult: data exchange between operators
+
+[ ] Dataflow Model
+    - Data streams: unbounded, bounded
+    - Operators: transformations on streams
+    - Transformation: logical operation
+    - Operator: physical implementation
+
+[ ] Parallelism
+    - Operator parallelism: parallel instances of operator
+    - Job parallelism: default for all operators
+    - Slot sharing: multiple operators in same slot
+    - Chain of operators: executed in same thread
+
+[ ] Task Scheduling
+    - Slot allocation strategy
+    - Scheduling modes: LAZY, EAGER
+    - Task deployment
+    - Failover strategies
+
+
+================================================================================
+2. DATASTREAM API VS TABLE API/SQL
+================================================================================
+
+[ ] DataStream API
+    - Low-level, fine-grained control
+    - Process function for custom logic
+    - Stateful operations
+    - Event-time processing
+    - Use for: complex event processing, custom state logic
+
+[ ] Table API/SQL
+    - Relational API, declarative
+    - Optimized by Calcite optimizer
+    - Built-in functions, windowing
+    - Easier to write and maintain
+    - Use for: standard analytics, ETL, SQL users
+
+[ ] Choosing Between APIs
+    - DataStream: complex stateful processing, custom logic
+    - Table/SQL: standard aggregations, joins, time windows
+    - Can mix both: DataStream → Table → DataStream
+    - Consider team expertise
+
+[ ] Performance Comparison
+    - Table/SQL: optimized by Calcite, often faster for standard ops
+    - DataStream: more control, can be faster for custom logic
+    - Both use same runtime engine
+    - Consider code maintainability
+
+
+================================================================================
+3. STATE MANAGEMENT AND BACKENDS
+================================================================================
+
+[ ] State Types
+    - Keyed State: keyed stream, per-key state
+    - Operator State: non-keyed, per-operator state
+    - Broadcast State: broadcast to all tasks
+    - Keyed State types: ValueState, ListState, MapState, ReducingState, AggregatingState
+
+[ ] State Backends
+    - MemoryStateBackend: in-memory, limited to small state
+    - FsStateBackend: filesystem checkpoint, in-memory runtime
+    - RocksDBStateBackend: disk-based, scalable, handles large state
+    - Default: RocksDB for production
+
+[ ] State Backend Selection
+    - MemoryStateBackend: testing, small state (< few MB)
+    - FsStateBackend: medium state (< few GB), faster than RocksDB
+    - RocksDBStateBackend: large state (TBs), slower but scalable
+
+[ ] State TTL
+    - Configure time-to-live for state
+    - Automatic cleanup of expired state
+    - StateTtlConfig: configure TTL
+    - Prevents unbounded state growth
+
+[ ] State Access Patterns
+    - Read-heavy vs write-heavy
+    - State size estimation
+    - Update frequency
+    - Choose appropriate state type
+
+
+================================================================================
+4. CHECKPOINTING AND FAULT TOLERANCE
+================================================================================
+
+[ ] Checkpointing Basics
+    - Asynchronous barrier snapshotting
+    - Consistent snapshots of state and stream positions
+    - Exactly-once semantics with aligned checkpoints
+    - Unaligned checkpoints for high latency
+
+[ ] Checkpoint Configuration
+    - checkpointing.interval: checkpoint interval
+    - checkpointing.timeout: checkpoint timeout
+    - checkpointing.min-pause: minimum pause between checkpoints
+    - checkpointing.mode: EXACTLY_ONCE, AT_LEAST_ONCE
+
+[ ] Checkpoint Storage
+    - State backend determines checkpoint storage
+    - Filesystem: HDFS, S3, GCS
+    - High availability: redundant storage
+    - Checkpoint retention: retain-on-cancellation
+
+[ ] Incremental Checkpointing
+    - RocksDB incremental checkpoints
+    - Only upload changes since last checkpoint
+    - Reduces checkpoint size and time
+    - Enabled by default for RocksDB
+
+[ ] Unaligned Checkpoints
+    - For high-latency networks
+    - Checkpoint without waiting for barriers
+    - Larger checkpoint size
+    - Enable: execution.checkpointing.unaligned: true
+
+[ ] Savepoints
+    - Manual checkpoints for upgrades
+    - Flink version compatibility
+    - Manual trigger: savepoint
+    - Restore from savepoint
+
+[ ] Checkpoint Monitoring
+    - Checkpoint duration
+    - Checkpoint size
+    - Checkpoint failures
+    - Backpressure impact
+
+
+================================================================================
+5. WINDOW OPERATIONS
+================================================================================
+
+[ ] Window Types
+    - Tumbling Windows: fixed-size, non-overlapping
+    - Sliding Windows: fixed-size, overlapping
+    - Session Windows: dynamic, based on gaps
+    - Global Windows: single window per key
+
+[ ] Window Assigners
+    - TumblingEventTimeWindows
+    - SlidingEventTimeWindows
+    - EventTimeSessionWindows
+    - DynamicEventTimeSessionWindows
+
+[ ] Window Functions
+    - ReduceFunction: incremental aggregation
+    - AggregateFunction: more complex aggregation
+    - ProcessWindowFunction: full window access
+    - Prefer reduce/aggregate for performance
+
+[ ] Evictors
+    - Remove elements before/after window
+    - Use carefully (performance impact)
+    - Custom evictors
+
+[ ] Window Triggers
+    - Default triggers for each window type
+    - Custom triggers for advanced scenarios
+    - EventTimeTrigger, ProcessingTimeTrigger
+
+[ ] Early Results
+    - Fire early before window closes
+    - Continuous event-time triggers
+    - Reduce latency for long windows
+
+[ ] Window Performance
+    - Use reduce/aggregate over processWindowFunction
+    - Pre-aggregate where possible
+    - Avoid large windows
+    - Consider session window merging overhead
+
+
+================================================================================
+6. TIME SEMANTICS
+================================================================================
+
+[ ] Time Characteristics
+    - Event Time: time when event occurred (ideal for correctness)
+    - Processing Time: time when event is processed (lowest latency)
+    - Ingestion Time: time when event enters Flink
+
+[ ] Setting Time Characteristic
+    - StreamExecutionEnvironment.setStreamTimeCharacteristic()
+    - Default: ProcessingTime (Flink 1.12+)
+    - EventTime recommended for correctness
+
+[ ] Event Time Advantages
+    - Correct results with out-of-order events
+    - Reproducible results
+    - Handles late data
+    - Required for exactly-once semantics
+
+[ ] Processing Time Advantages
+    - Lowest latency
+    - No watermarks needed
+    - Simpler setup
+    - Use when order doesn't matter
+
+[ ] Timestamp Extraction
+    - WatermarkStrategy: assign timestamps and watermarks
+    - TimestampAssigner: extract timestamp from event
+    - BoundedOutOfOrdernessWatermarks: handle lateness
+
+[ ] Time Characteristics Choice
+    - Event Time: correctness, out-of-order data, late events
+    - Processing Time: low latency, real-time dashboards
+    - Ingestion Time: compromise between event and processing time
+
+
+================================================================================
+7. WATERMARKS AND LATE DATA HANDLING
+================================================================================
+
+[ ] Watermark Basics
+    - Monotonically increasing timestamp
+    - Tracks event time progress
+    - Triggers window firing
+    - Allows late data handling
+
+[ ] Watermark Generation
+    - Periodic watermarks: generated at interval
+    - Punctuated watermarks: generated per event
+    - BoundedOutOfOrdernessWatermarks: common pattern
+    - WatermarkStrategy: unified API
+
+[ ] Watermark Strategies
+    - For monotonous timestamps: no delay
+    - For out-of-order: bounded out-of-orderness
+    - Custom watermark generators
+    - Idle sources: handle idle partitions
+
+[ ] Late Data Handling
+    - Allowed lateness: side output late events
+    - Side output late data: collect late events
+    - Drop late events: default behavior
+    - Process late events separately
+
+[ ] Watermark Configuration
+    - execution.auto-watermark-interval: watermark interval
+    - execution.watermark-alignment: alignment for multiple sources
+    - execution.watermark-alignment.max-drift: max drift
+    - execution.watermark-alignment.update-interval: update interval
+
+[ ] Idle Sources
+    - Idle sources stall watermark progress
+    - WatermarkStrategy.withIdleness: handle idle sources
+    - Configure idle timeout
+    - Prevents watermark stall
+
+[ ] Watermark Monitoring
+    - Current watermark per operator
+    - Watermark alignment status
+    - Late events count
+    - Idle source detection
+
