@@ -305,3 +305,763 @@ TABLE OF CONTENTS
     - Late events count
     - Idle source detection
 
+
+================================================================================
+8. KEYED VS NON-KEYED STREAMS
+================================================================================
+
+[ ] Keyed Streams
+    - stream.keyBy(): partition by key
+    - State per key
+    - Window operations
+    - Parallel operations per key
+
+[ ] Non-Keyed Streams
+    - No key partitioning
+    - Operator state only
+    - Global windows
+    - Limited parallelism for some operations
+
+[ ] Key Selection
+    - Choose high-cardinality keys
+    - Avoid data skew
+    - Consider join keys
+    - Consider state partitioning
+
+[ ] Data Skew in Keyed Streams
+    - Hot keys cause uneven load
+    - Monitor key distribution
+    - Use composite keys
+    - Consider salting for extreme skew
+
+[ ] Keyed State Access
+    - Only accessible in keyed streams
+    - RuntimeContext: access state
+    - Keyed state is partitioned by key
+    - State is local to key group
+
+[ ] Key Group Assignment
+    - Key groups: partition keys across operators
+    - Maximum parallelism: max key groups
+    - Key group range per operator
+    - Affects state migration on rescaling
+
+
+================================================================================
+9. PARALLELISM AND SLOT ALLOCATION
+================================================================================
+
+[ ] Parallelism Levels
+    - Operator parallelism: set per operator
+    - Job parallelism: default for all operators
+    - Cluster parallelism: total slots available
+    - Source parallelism: often matches partitions
+
+[ ] Setting Parallelism
+    - env.setParallelism(): default for job
+    - operator.setParallelism(): per operator
+    - Command line: -p
+    - Consider data volume and resources
+
+[ ] Slot Allocation
+    - Task slots: resource units
+    - Slot sharing: multiple operators in same slot
+    - Slot sharing group: control sharing
+    - Resource profiles: CPU, memory, GPU
+
+[ ] Parallelism Guidelines
+    - Source parallelism: match source partitions (Kafka partitions)
+    - Operator parallelism: match downstream capacity
+    - Sink parallelism: match external system capacity
+    - Consider state size per operator
+
+[ ] Slot Sharing Strategy
+    - Default: all operators share slots
+    - Slot sharing groups: isolate operators
+    - Use for: resource isolation, different profiles
+    - Example: separate I/O and compute
+
+[ ] Rescaling
+    - Changing parallelism at runtime
+    - State redistribution
+    - Key groups: enable rescaling
+    - Savepoints for state migration
+
+[ ] Parallelism vs Throughput
+    - Higher parallelism: higher throughput potential
+    - Diminishing returns: overhead
+    - Network bottleneck
+    - Consider backpressure
+
+
+================================================================================
+10. OPERATOR CHAINING
+================================================================================
+
+[ ] Operator Chaining Basics
+    - Chain operators: execute in same thread
+    - Reduces serialization, network overhead
+    - Improves throughput
+    - Enabled by default
+
+[ ] Chaining Conditions
+    - Same parallelism
+    - Same slot sharing group
+    - No shuffle between operators
+    - Forward connection pattern
+
+[ ] Disable Chaining
+    - startNewChain(): break chain
+    - disableChaining(): disable chaining for operator
+    - Use for: debugging, resource isolation
+
+[ ] Slot Sharing Groups
+    - slotSharingGroup(): control slot sharing
+    - Isolate resource-intensive operators
+    - Separate I/O and compute
+    - Custom resource profiles
+
+[ ] Chaining Best Practices
+    - Let Flink chain by default
+    - Break chains for debugging
+    - Isolate heavy operators
+    - Monitor chain performance
+
+[ ] Chain Monitoring
+    - Flink Web UI: view chains
+    - Task metrics: per-chain metrics
+    - Backpressure per chain
+    - CPU profiling
+
+
+================================================================================
+11. MEMORY MANAGEMENT
+================================================================================
+
+[ ] Memory Model
+    - Task Heap Memory: JVM heap for operators
+    - Managed Memory: Flink-managed for sorting, hashing, caching
+    - Network Buffers: for data exchange
+    - Managed Memory Fraction: ratio of total memory
+
+[ ] Memory Configuration
+    - taskmanager.memory.process.size: total process memory
+    - taskmanager.memory.flink.size: total Flink memory
+    - taskmanager.memory.managed.fraction: managed memory fraction
+    - taskmanager.memory.network.fraction: network memory fraction
+
+[ ] Managed Memory
+    - Used by: RocksDB, sorting, hashing, batch shuffle
+    - Off-heap: reduces GC pressure
+    - Configurable size
+    - Critical for performance
+
+[ ] JVM Heap Tuning
+    - Use G1GC for large heaps
+    - -XX:+UseG1GC
+    - -XX:MaxGCPauseMillis
+    - Monitor GC logs
+
+[ ] Memory Profiling
+    - Flink Web UI: memory usage
+    - TaskManager metrics
+    - JVM profiling tools
+    - Native memory tracking
+
+[ ] Out of Memory Handling
+    - Increase taskmanager.memory.process.size
+    - Increase managed memory
+    - Reduce parallelism (less state per task)
+    - Check for state leaks
+
+[ ] Memory Guidelines
+    - Heap: 1-4GB per TaskManager
+    - Managed: 20-40% of total memory
+    - Network: 10% of total memory
+    - Leave headroom for OS
+
+
+================================================================================
+12. NETWORK BUFFERS AND SHUFFLE
+================================================================================
+
+[ ] Network Buffers
+    - TaskManager network memory
+    - For data exchange between tasks
+    - Credit-based flow control
+    - Backpressure handling
+
+[ ] Network Configuration
+    - taskmanager.memory.network.fraction: network memory fraction
+    - taskmanager.memory.network.min: minimum network memory
+    - taskmanager.memory.network.max: maximum network memory
+    - taskmanager.network.numberOfBuffers: number of buffers
+
+[ ] Buffer Size
+    - taskmanager.network.memory.buffer-size-per-channel: buffer size
+    - Default: 32KB
+    - Larger buffers: better throughput, more memory
+    - Tune based on workload
+
+[ ] Shuffle Service
+    - Netty Shuffle Service
+    - Partition reuse
+    - Blocking shuffle
+    - Result partition types
+
+[ ] Backpressure
+    - Automatic backpressure via credit-based flow control
+    - Monitor in Flink Web UI
+    - Identify slow operators
+    - Optimize downstream operators
+
+[ ] Network Optimization
+    - Increase network memory for high-throughput jobs
+    - Tune buffer size
+    - Use compression for network data
+    - Monitor backpressure
+
+
+================================================================================
+13. SERIALIZATION AND TYPE INFORMATION
+================================================================================
+
+[ ] Flink Type System
+    - TypeInformation: describes data types
+    - TypeSerializer: serialization logic
+    - Kryo: fallback for POJOs
+    - Avro, Protobuf: custom serializers
+
+[ ] Type Information
+    - Automatically derived for many types
+    - TypeHint: for generic types
+    - PojoTypeInfo: for POJOs
+    - CaseClassTypeInfo: for Scala case classes
+
+[ ] Serialization Performance
+    - Flink's own serializers: fastest
+    - Kryo: slower but flexible
+    - Avro/Protobuf: good for cross-language
+    - Avoid Java serialization
+
+[ ] Custom Serializers
+    - Implement TypeSerializer
+    - Register custom types
+    - Use for complex types
+    - Performance critical
+
+[ ] Type Hints
+    - returns(TypeHint<T>): specify return type
+    - Important for lambdas with generics
+    - Prevent Kryo fallback
+    - Better performance
+
+[ ] Kryo Configuration
+    - env.getConfig().registerKryoType(): register types
+    - env.getConfig().registerTypeWithKryoSerializer(): custom serializer
+    - Disable Kryo: env.getConfig().disableKryo()
+    - Tune for performance
+
+
+================================================================================
+14. SOURCE AND SINK CONNECTORS
+================================================================================
+
+[ ] Source Connectors
+    - Kafka: most common, exactly-once support
+    - Kinesis: AWS streaming
+    - Pulsar: alternative to Kafka
+    - Files: bounded/unbounded file sources
+
+[ ] Kafka Source Optimization
+    - Source parallelism = Kafka topic partitions
+    - fetch.min.bytes, fetch.max.bytes: tune fetch size
+    - fetch.max.wait.ms: reduce latency
+    - Use latest consumer for performance
+
+[ ] Sink Connectors
+    - Kafka: exactly-once with transactions
+    - JDBC: batch writes for performance
+    - Elasticsearch: bulk indexing
+    - Files: rolling policy, compression
+
+[ ] Sink Optimization
+    - Batch writes: reduce API calls
+    - Async I/O: non-blocking writes
+    - Buffering: batch before flush
+    - Exactly-once: consider overhead
+
+[ ] Source-Sink Alignment
+    - Watermark alignment for multiple sources
+    - Prevents slow source from stalling watermark
+    - Configure alignment parameters
+    - Monitor alignment status
+
+[ ] Connector Best Practices
+    - Match parallelism to external system partitions
+    - Use batch operations for sinks
+    - Monitor connector metrics
+    - Handle connector failures gracefully
+
+
+================================================================================
+15. CEP (COMPLEX EVENT PROCESSING) OPTIMIZATION
+================================================================================
+
+[ ] CEP Basics
+    - Pattern detection on event streams
+    - Complex event patterns
+    - State machine implementation
+    - Time-based patterns
+
+[ ] CEP Performance
+    - Pattern complexity affects performance
+    - Shared buffer: state management
+    - Time windows: limit pattern search
+    - Avoid overly complex patterns
+
+[ ] CEP Optimization
+    - Use strict contiguity where possible
+    - Limit pattern length
+    - Use time constraints
+    - Monitor CEP state size
+
+[ ] CEP Best Practices
+    - Keep patterns simple
+    - Use time windows
+    - Avoid Kleene loops
+    - Monitor state growth
+
+
+================================================================================
+16. BATCH PROCESSING OPTIMIZATION
+================================================================================
+
+[ ] Batch vs Streaming
+    - Batch: bounded data, different execution
+    - Streaming: unbounded, continuous
+    - Flink: unified API for both
+    - Batch optimization: blocking shuffle, sort-merge join
+
+[ ] Batch Execution
+    - execution.runtime-mode: BATCH
+    - Blocking shuffle: disk-based shuffle
+    - Sort-merge join: for large data
+    - Spillable operators
+
+[ ] Batch Optimization
+    - Use batch mode for bounded data
+    - Tune memory for sorting/hashing
+    - Configure spill thresholds
+    - Monitor disk I/O
+
+[ ] Batch Configuration
+    - taskmanager.memory.managed.fraction: increase for batch
+    - execution.batch-shuffle-mode: ALL_EXCHANGES_BLOCKING, ALL_EXCHANGES_PIPELINED
+    - execution.sort-spill-threshold: sort spill threshold
+    - execution.hash-join-bloom-filter: bloom filter for joins
+
+[ ] Batch Best Practices
+    - Use batch mode for bounded data
+    - Tune managed memory
+    - Monitor disk usage
+    - Use appropriate join strategies
+
+
+================================================================================
+17. SQL/TABLE API OPTIMIZATION
+================================================================================
+
+[ ] Table API/SQL Basics
+    - Relational API
+    - Calcite optimizer
+    - Declarative queries
+    - Dynamic tables
+
+[ ] SQL Optimization
+    - Calcite optimizes query plan
+    - Rule-based and cost-based optimization
+    - View execution plan: TableResult.explain()
+    - Use hints for join strategies
+
+[ ] Join Optimization
+    - Join hints: LEFT, RIGHT, FULL
+    - Join strategies: hash join, sort-merge join, nested-loop join
+    - Broadcast join: for small tables
+    - Join reorder: Calcite reorders joins
+
+[ ] Aggregation Optimization
+    - Mini-batch aggregation: reduce state updates
+    - table.exec.mini-batch.enabled: enable mini-batch
+    - table.exec.mini-batch.allow-latency: latency tolerance
+    - table.exec.mini-batch.size: batch size
+
+[ ] Window Optimization
+    - Group window vs hop window
+    - Cumulative window
+    - Session window
+    - Use window TVF (Table-valued functions)
+
+[ ] SQL Best Practices
+    - Use built-in functions
+    - Filter early
+    - Select only needed columns
+    - Use appropriate window functions
+
+
+================================================================================
+18. JOIN OPTIMIZATION
+================================================================================
+
+[ ] Join Types
+    - Inner join: matching rows
+    - Left/Right outer: all rows from one side
+    - Full outer: all rows from both
+    - Interval join: time-based join
+
+[ ] Join Strategies
+    - Hash join: one table fits in memory
+    - Sort-merge join: both tables large
+    - Nested-loop join: small tables
+    - Broadcast join: broadcast small table
+
+[ ] Join Optimization Tips
+    - Filter before join
+    - Join on most selective columns
+    - Use interval joins for time-based joins
+    - Use broadcast hints for small tables
+
+[ ] State Size in Joins
+    - Join state grows with key cardinality
+    - Use TTL for join state
+    - Consider temporal joins for unbounded data
+    - Monitor join state size
+
+[ ] Join Best Practices
+    - Filter early
+    - Use appropriate join type
+    - Consider state TTL
+    - Monitor state growth
+
+
+================================================================================
+19. ASYNC I/O
+================================================================================
+
+[ ] Async I/O Basics
+    - Non-blocking I/O operations
+    - AsyncFunction interface
+    - Improves throughput for I/O-bound operations
+    - Prevents pipeline stalls
+
+[ ] Async I/O Use Cases
+    - Database lookups
+    - External API calls
+    - Cache access
+    - Any blocking I/O
+
+[ ] Async I/O Configuration
+    - async-io.capacity: concurrent requests
+    - async-io.max-concurrent-requests: max concurrent
+    - async-io.timeout: request timeout
+    - async-io.order: order guarantees
+
+[ ] Async I/O Best Practices
+    - Use for blocking I/O
+    - Tune capacity based on external system
+    - Handle timeouts gracefully
+    - Consider ordering requirements
+
+[ ] Async I/O Performance
+    - Higher throughput vs sync I/O
+    - Increased latency due to batching
+    - Monitor async queue
+    - Tune capacity
+
+
+================================================================================
+20. MANAGED MEMORY AND TASK HEAP
+================================================================================
+
+[ ] Managed Memory
+    - Flink-managed off-heap memory
+    - Used by: RocksDB, sorting, hashing, caching
+    - Reduces GC pressure
+    - Configurable fraction
+
+[ ] Task Heap
+    - JVM heap for operators
+    - User data, UDFs
+    - Managed by JVM GC
+    - Typical: 1-4GB
+
+[ ] Memory Configuration
+    - taskmanager.memory.process.size: total process memory
+    - taskmanager.memory.flink.size: Flink memory
+    - taskmanager.memory.managed.fraction: managed fraction (default 0.4)
+    - taskmanager.memory.task.heap.size: task heap
+
+[ ] Memory Tuning
+    - Increase managed memory for stateful jobs
+    - Increase heap for compute-intensive jobs
+    - Monitor memory usage
+    - Adjust based on workload
+
+[ ] Memory Guidelines
+    - Total: 4-8GB per TaskManager
+    - Managed: 20-40% of total
+    - Heap: 20-30% of total
+    - Network: 10% of total
+
+
+================================================================================
+21. ROCKSDB STATE BACKEND TUNING
+================================================================================
+[ ] RocksDB Basics
+    - Embedded key-value store
+    - Disk-based state backend
+    - Handles large state (TBs)
+    - Default for production
+
+[ ] RocksDB Configuration
+    - state.backend.rocksdb.localdir: local directories
+    - state.backend.rocksdb.compaction.style: compaction style
+    - state.backend.rocksdb.compaction.level: compaction level
+    - state.backend.rocksdb.write.buffer.size: write buffer size
+
+[ ] RocksDB Tuning
+    - Use multiple local directories (SSDs)
+    - Tune compaction for workload
+    - Increase write buffer for write-heavy
+    - Enable compression
+
+[ ] RocksDB Performance
+    - Slower than memory state backend
+    - But scalable to large state
+    - Async checkpointing
+    - Incremental checkpoints
+
+[ ] RocksDB Best Practices
+    - Use SSDs for localdir
+    - Multiple directories for I/O parallelism
+    - Monitor RocksDB metrics
+    - Tune compaction based on workload
+
+
+================================================================================
+22. SAVEPOINTS AND UPGRADES
+================================================================================
+
+[ ] Savepoints Basics
+    - Manual checkpoints
+    - Flink version compatibility
+    - Used for upgrades, maintenance
+    - Manual trigger
+
+[ ] Savepoint Configuration
+    - state.savepoints.dir: savepoint directory
+    - state.savepoints.fs.dir: filesystem directory
+    - Retain savepoints as needed
+    - Version compatibility
+
+[ ] Savepoint Best Practices
+    - Take savepoints before upgrades
+    - Test restore in staging
+    - Use savepoints for A/B testing
+    - Clean up old savepoints
+
+[ ] Upgrade Process
+    - Take savepoint
+    - Upgrade Flink version
+    - Restore from savepoint
+    - Verify job behavior
+
+[ ] Savepoint vs Checkpoint
+    - Checkpoint: automatic, for fault tolerance
+    - Savepoint: manual, for upgrades
+    - Both can restore job state
+    - Savepoints have version compatibility
+
+
+================================================================================
+23. MONITORING AND METRICS
+================================================================================
+
+[ ] Flink Web UI
+    - Overview: job status, metrics
+    - Jobs: job details, checkpoints
+    - Task Managers: resource usage
+    - Checkpoints: checkpoint statistics
+
+[ ] Key Metrics
+    - Records In/Out: throughput
+    - Latency: event-time latency
+    - Backpressure: operator backpressure
+    - Checkpoint: duration, size, failures
+    - State: state size per operator
+
+[ ] Metrics System
+    - Metrics reporters: Prometheus, Graphite, InfluxDB
+    - System metrics: JVM, CPU, memory
+    - User metrics: custom metrics in UDFs
+    - Histograms, meters, gauges
+
+[ ] Monitoring Best Practices
+    - Set up metrics reporter
+    - Monitor key metrics
+    - Set up alerts
+    - Historical analysis
+
+[ ] Latency Tracking
+    - Latency markers: track end-to-end latency
+    - metrics.latency.interval: latency tracking interval
+    - Source latency tracking
+    - Operator latency tracking
+
+[ ] Backpressure Monitoring
+    - Web UI: backpressure graph
+    - Identify slow operators
+    - Optimize downstream
+    - Check resource constraints
+
+
+================================================================================
+24. COMMON ANTI-PATTERNS
+================================================================================
+
+[ ] Anti-Pattern: Using Processing Time When Event Time Needed
+    - Problem: incorrect results with out-of-order data
+    - Solution: use event time with watermarks
+
+[ ] Anti-Pattern: Not Setting Watermarks
+    - Problem: windows never fire, late data not handled
+    - Solution: configure watermarks with appropriate lateness
+
+[ ] Anti-Pattern: Large State Without TTL
+    - Problem: unbounded state growth, OOM
+    - Solution: configure state TTL
+
+[ ] Anti-Pattern: Too Low Parallelism
+    - Problem: underutilized cluster, slow processing
+    - Solution: increase parallelism based on resources
+
+[ ] Anti-Pattern: Too High Parallelism
+    - Problem: overhead, small state per task, network bottleneck
+    - Solution: tune based on data volume and resources
+
+[ ] Anti-Pattern: Not Using Managed Memory
+    - Problem: excessive GC, poor performance
+    - Solution: configure managed memory appropriately
+
+[ ] Anti-Pattern: Using MemoryStateBackend in Production
+    - Problem: limited state size, not scalable
+    - Solution: use RocksDBStateBackend
+
+[ ] Anti-Pattern: Not Monitoring Checkpoints
+    - Problem: checkpoint failures, recovery issues
+    - Solution: monitor checkpoint metrics, tune configuration
+
+[ ] Anti-Pattern: Blocking I/O in Operators
+    - Problem: pipeline stalls, poor throughput
+    - Solution: use async I/O
+
+[ ] Anti-Pattern: Not Handling Late Data
+    - Problem: late events dropped, incorrect results
+    - Solution: configure allowed lateness, side output late data
+
+
+================================================================================
+25. PRODUCTION CONSIDERATIONS
+================================================================================
+
+[ ] High Availability
+    - JobManager HA: ZooKeeper, Kubernetes
+    - Standby JobManagers
+    - Checkpoint storage redundancy
+    - Network partition handling
+
+[ ] Resource Management
+    - Kubernetes: native deployment
+    - YARN: resource allocation
+    - Standalone: static allocation
+    - Resource isolation
+
+[ ] Security
+    - Kerberos authentication
+    - SSL/TLS encryption
+    - Authorization
+    - Secret management
+
+[ ] Deployment Strategies
+    - Blue-green deployment
+    - Canary releases
+    - Savepoint-based upgrades
+    - Rollback procedures
+
+[ ] Configuration Management
+    - Externalize configuration
+    - Environment-specific configs
+    - Version configuration
+    - Config validation
+
+[ ] Logging
+    - Log4j configuration
+    - Log levels
+    - Centralized logging
+    - Log retention
+
+[ ] Error Handling
+    - Retry strategies
+    - Dead letter queues
+    - Circuit breakers
+    - Graceful degradation
+
+[ ] Performance Testing
+    - Load testing
+    - Stress testing
+    - Soak testing
+    - Performance benchmarking
+
+[ ] Documentation
+    - Job documentation
+    - Runbooks
+    - Architecture diagrams
+    - Troubleshooting guides
+
+
+================================================================================
+ADDITIONAL RESOURCES
+================================================================================
+
+[ ] Official Documentation
+    - Flink Documentation
+    - Flink Training
+    - Flink Blog
+    - Flink GitHub
+
+[ ] Books
+    - Stream Processing with Apache Flink
+    - Designing Data-Intensive Applications
+
+[ ] Community Resources
+    - Flink mailing lists
+    - Stack Overflow
+    - Flink Slack
+    - Flink meetup groups
+
+
+================================================================================
+CHECKLIST COMPLETION
+================================================================================
+
+[ ] Review all sections
+[ ] Practice with real datasets
+[ ] Build sample Flink jobs
+    - Stream processing job
+    - Batch processing job
+    - Stateful processing job
+    - SQL/Table API job
+[ ] Monitor production jobs
+[ ] Continuously learn and update
+
+================================================================================
